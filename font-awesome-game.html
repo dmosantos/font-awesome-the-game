@@ -1,0 +1,429 @@
+<!--
+Font Awesome The Game
+by Diego Marques - 2017
+https://github.com/dmosantos
+-->
+<!DOCTYPE html>
+<html class="no-js" lang="pt-br" itemscope itemtype="http://schema.org/WebPage">
+    <head>
+        <title>FontAwesome The Game</title>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="IE=Edge,chrome=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="author" href="https://plus.google.com/+DiegoMarques84"/>
+        <link rel="publisher" href="https://plus.google.com/+DiegoMarques84"/>
+        <meta itemprop="name" content="FontAwesome The Game">
+        <meta name="twitter:title" content="FontAwesome The Game">
+        <meta name="twitter:creator" content="@diego_mos">
+        <meta property="og:title" content="FontAwesome The Game" />
+        <meta property="og:type" content="website" />
+        <meta property="og:description" content="Enjoy FontAwesome The Game" />
+        <meta property="og:site_name" content="FontAwesome The Game" />
+        <meta property="og:locale" content="pt_BR" />
+        <meta property="fb:admins" content="100002041556098" />
+        <meta name="theme-color" content="#f00">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script>
+            $(document).ready(start);
+
+            function start() {
+                var actors = [];
+                var windowHeight = $(window).outerHeight();
+                var windowWidth = $(window).outerWidth();
+                var left = false;
+                var right = false;
+                var up = false;
+                var down = false;
+                var space = false;
+                var esc = false;
+                var running = true;
+                var timeStart = new Date();
+                var frameTime = new Date().getTime();
+                var points = 0;
+                var life = 10;
+
+                var $debug = $('<div style="position: absolute; top: 0; left: 0; padding: 10px; background: rgba(0, 0, 0, 0.7); color: #fff; z-index: 999999; font-family: sans-serif; font-size: 18px;">FrameTime</div>');
+                var $placar = $('<div style="position: fixed; left: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); padding: 10px; z-index: 99999; color: #fff; font-family: sans-serif; font-size: 18px;"></div>')[0];
+                var $title = $('<div style="position: fixed; right: 0; top: 0; background: rgba(0, 0, 0, 0.7); padding: 10px; z-index: 99999; color: #fff; font-family: sans-serif; font-size: 18px; text-align: right;">Font Awesome The Game<br><small>by Diego Marques - v0.1</small></div>')[0];
+
+                function actor(name, icon, angleIcon, color, calc, render) {
+                    this.id = new Date().getTime();
+                    this.name = name;
+                    this.icon = icon;
+                    this.angleIcon = angleIcon;
+                    this.color = color;
+                    this.acel = 1;
+                    this.acelTax = 0.01;
+                    this.speed = 3;
+                    this.turnSpeed = 1;
+                    this.turnSpeedAcel = 1;
+                    this.angle = 0;
+                    this.x = 0;
+                    this.y = windowHeight / 2;
+                    this.width = 20;
+                    this.height = 20;
+                    this.left = false;
+                    this.right = false;
+                    this.up = false;
+                    this.down = false;
+                    this.space = false;
+                    this.life = 1;
+                    this.showLife = true;
+                    this.lifeTime = null;
+                    this.touch = {};
+                    this.die = false;
+                    this.$actor = $('<i class="fa fa-fw fa-' + this.icon + '" style="color: ' + this.color + '; font-size: 20px; width: ' + this.width + 'px; width: ' + this.height + 'px; line-height: 26px; text-align: center; position: fixed; top: -200px; left: -200px; z-index: 999999; text-shadow: 0px 0px 3px rgba(0, 0, 0, 1);"></i>')[0];
+
+                    this.calc = function() {
+                        if(calc) calc(this);
+
+                        if(this.left) this.angle = this.angle - (this.turnSpeed * this.turnSpeedAcel);
+                        if(this.right) this.angle = this.angle + (this.turnSpeed * this.turnSpeedAcel);
+
+                        this.acel = this.up
+                            ? this.acel < 2 ? this.acel + this.acelTax : 2 : this.acel > 1 ? this.acel - this.acelTax
+                            : this.down ? this.acel > 0.1 ? this.acel - this.acelTax : 0.1 : this.acel < 1 ? this.acel + this.acelTax : 1;
+
+                        this.x += this.speed * this.acel * Math.cos(this.angle * Math.PI / 180);
+                        this.y += this.speed * this.acel * Math.sin(this.angle * Math.PI / 180);
+
+                        this.x = this.x > windowWidth ? 0 : this.x < 0 ? windowWidth : this.x;
+                        this.y = this.y > windowHeight ? 0 : this.y < 0 ? windowHeight : this.y;
+
+                        if(this.lifeTime)
+                            if(this.lifeTime < frameTime - this.id) this.die = true;
+
+                        if(this.life <= 0) this.die = true;
+                    }
+
+                    this.render = function() {
+                        if(render) render(this);
+
+                        this.$actor.style.left = this.x + 'px';
+                        this.$actor.style.top = this.y + 'px';
+
+                        this.$actor.style.webkitTransform = 'rotate('+(this.angle+this.angleIcon)+'deg)';
+                        this.$actor.style.mozTransform    = 'rotate('+(this.angle+this.angleIcon)+'deg)';
+                        this.$actor.style.msTransform     = 'rotate('+(this.angle+this.angleIcon)+'deg)';
+                        this.$actor.style.oTransform      = 'rotate('+(this.angle+this.angleIcon)+'deg)';
+                        this.$actor.style.transform       = 'rotate('+(this.angle+this.angleIcon)+'deg)';
+
+                    }
+
+                    $('body').append(this.$actor);
+                    this.$actor.focus();
+                }
+
+                function init() {
+                    l('INIT');
+
+                    // Placar
+                    $('body').css('overflow', 'hidden').html('').append($placar);
+
+                    // Title
+                    $('body').append($title);
+
+                    // Debug
+                    //$('body').append($debug);
+
+                    var audioMusic = new Audio('http://www.bigsoundbank.com/dl.php?ext=mp3&id=0842&button=GO>');
+                    audioMusic.addEventListener('ended', function() {
+                        this.currentTime = 0;
+                        this.play();
+                    }, false);
+                    audioMusic.play();
+
+                    var audioHit = new Audio('http://www.bigsoundbank.com/dl.php?ext=mp3&id=0942&button=GO>');
+                    var audioEnemyHit = new Audio('http://www.bigsoundbank.com/dl.php?ext=mp3&id=0739&button=GO>');
+                    var audioEnd = new Audio('http://www.bigsoundbank.com/dl.php?ext=mp3&id=0433&button=GO>');
+                    var audioFire = new Audio('http://www.bigsoundbank.com/dl.php?ext=mp3&id=0648&button=GO>');
+                    var audioEnemyFire = new Audio('http://www.bigsoundbank.com/dl.php?ext=mp3&id=0648&button=GO>');
+
+                    // Player
+                    var player = new actor(
+                        'player',
+                        'plane',
+                        45,
+                        '#00f',
+                        function($this) {
+                            $this.left = left;
+                            $this.right = right;
+                            $this.up = up;
+                            $this.down = down;
+                            $this.space = space;
+
+                            life = $this.life;
+
+                            if($this.space && !$this.fired) {
+                                $this.fired = true;
+                                audioFire.currentTime = 0;
+                                audioFire.play();
+
+                                var bullet = new actor(
+                                    'bullet',
+                                    'angle-right',
+                                    0,
+                                    '#000',
+                                    null,
+                                    null
+                                )
+                                bullet.x = $this.x + (20 * Math.cos($this.angle * Math.PI / 180));
+                                bullet.y = $this.y + (20 * Math.sin($this.angle * Math.PI / 180));
+                                bullet.angle = $this.angle;
+                                bullet.speed = 7;
+                                bullet.lifeTime = 10000;
+                                bullet.touch = {
+                                    'player': function(bullet, player) {
+                                        bullet.life--;
+                                        player.life--;
+                                    },
+                                    'enemy': function(bullet, enemy) {
+                                        bullet.life--;
+                                        enemy.life--;
+                                    }
+                                }
+                                actors.push(bullet);
+                            } else if(!$this.space) {
+                                $this.fired = false;
+                            }
+
+                            if($this.left || $this.right)
+                                $this.turnSpeedAcel = $this.turnSpeedAcel < 4 ? $this.turnSpeedAcel + 0.5 : 4;
+                            else
+                                $this.turnSpeedAcel = 1;
+                        },
+                        function($this) {
+                            if($this.up)
+                                $this.$actor.style.color = "#0af";
+
+                            if($this.down)
+                                $this.$actor.style.color = "#005";
+
+                            if(!$this.up && !$this.down && (frameTime - $this.lastColor > 100)) {
+                                $this.$actor.style.color = $this.color;
+                            }
+                        }
+                    )
+                    player.fired = false;
+                    player.life = life;
+                    player.lastColor = frameTime;
+                    player.onHit = function($this) {
+                        $this.lastColor = frameTime;
+                        $this.$actor.style.color = "#f00";
+                        audioHit.currentTime = 0;
+                        audioHit.play();
+                    }
+                    player.onDie = function() {
+                        audioEnd.currentTime = 0;
+                        audioEnd.play();
+                        
+                        var $restart = $('<a href="javascript:void(0);" title="Restart" style="position: fixed; padding: 10px 20px; background: rgba(0, 0, 0, 0.7); color: #fff; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: sans-serif; font-size: 18px;">RESTART</a>');
+
+                        $restart.on('click', start);
+
+                        $('body').append($restart);
+                    }
+                    actors.push(player);
+
+                    // Enemys
+                    function createTarget() {
+                        if(life > 0) {
+                            var type = random(1, 2);
+                            //type = 2;
+
+                            var enemy = new actor(
+                                'enemy',
+                                type == 1 ? 'male' : 'plane',
+                                type == 1 ? 0 : 45,
+                                type == 1 ? '#f90' : '#907',
+                                type == 1 ? null : function($this) {
+                                    $this.angle = life > 0 ? (Math.atan2(player.y - $this.y, player.x - $this.x) * 180 / Math.PI) : $this.angle;
+                                },
+                                function($this) {
+                                    if(frameTime - $this.lastColor > 100)
+                                        $this.$actor.style.color = $this.color;
+                                }
+                            )
+                            enemy.x = random(50, windowWidth - 50);
+                            enemy.y = random(50, windowHeight - 50);
+                            enemy.angle = type == 1 ? 0 : (Math.atan2(player.y - enemy.y, player.x - enemy.x) * 180 / Math.PI);
+                            enemy.speed = type == 1 ? 0 : 1;
+                            enemy.life = 5 * type;
+                            enemy.lifeTime = 60000;
+                            enemy.onHit = function($this) {
+                                points = points + (type == 1 ? 1 : 2);
+
+                                $this.lastColor = frameTime;
+                                $this.$actor.style.color = "#f00";
+
+                                audioEnemyHit.currentTime = 0;
+                                audioEnemyHit.play();
+                            }
+                            enemy.touch = {
+                                'player': function(enemy, player) {
+                                    enemy.life--;
+                                    player.life--;
+                                }
+                            }
+                            actors.push(enemy);
+
+                            shootTarged(enemy, type);
+
+                            setTimeout(createTarget, random(5000, 15000));
+                        }
+                    }
+                    setTimeout(createTarget, 1000);
+
+                    function shootTarged(enemy, type) {
+                        if(life > 0 && enemy.life > 0) {
+                            audioEnemyFire.currentTime = 0;
+                            audioEnemyFire.play();
+
+                            var enemyBullet = new actor(
+                                'enemyBullet',
+                                'rocket',
+                                45,
+                                '#f00',
+                                null,
+                                null
+                            )
+                            enemyBullet.angle = type == 1 ? random(0, 360) : enemy.angle;
+                            enemyBullet.x = enemy.x + (30 * Math.cos(enemyBullet.angle * Math.PI / 180));
+                            enemyBullet.y = enemy.y + (30 * Math.sin(enemyBullet.angle * Math.PI / 180));
+                            enemyBullet.speed = 6;
+                            enemyBullet.lifeTime = 20000;
+                            enemyBullet.touch = {
+                                    'player': function(bullet, player) {
+                                        bullet.life--;
+                                        player.life--;
+                                    }
+                                }
+                            actors.push(enemyBullet);
+
+                            setTimeout(function(){ shootTarged(enemy) }, random(5000, 15000));
+                        }
+                    }
+
+                    // Draw
+                    function draw(){
+                        requestAnimationFrame(draw);
+                        frameTime = new Date().getTime();
+
+                        if(running) {
+                            //$debug.html(frameTime);
+
+                            // Calculo de colisão
+                            for(var i1=0; i1<actors.length; i1++) {
+                                for(var i2=0; i2<actors.length; i2++) {
+                                    if(i1 != i2) {
+                                        if(actors[i1].touch[actors[i2].name]) {
+                                            var a = actors[i1].x - actors[i2].x
+                                            var b = actors[i1].y - actors[i2].y
+                                            if(Math.sqrt( a*a + b*b ) <= 20) {
+                                                actors[i1].touch[actors[i2].name](actors[i1], actors[i2]);
+                                                if(actors[i1].onHit) actors[i1].onHit(actors[i1]);
+                                                if(actors[i2].onHit) actors[i2].onHit(actors[i2]);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            for(var i=0; i<actors.length; i++) {
+                                actors[i].calc();
+                                actors[i].render();
+                            }
+
+                            // Placar
+                            $placar.innerHTML = 'Life: ' + life + '<br>Points: ' + points;
+
+                            clean();
+                        }
+
+                        if(esc)
+                            running = false;
+
+                        if(!running && space)
+                            running = true;
+                    }
+                    draw();
+
+                    // Clean
+                    function clean() {
+                        for(var i=0; i<actors.length; i++) {
+                            if(actors[i].die) {
+                                if(actors[i].onDie) actors[i].onDie();
+                                $(actors[i].$actor).remove();
+                                actors.splice(i, 1);
+                            }
+                        }
+                    }
+                }
+                init();
+
+                //var easter = '';
+                function keyDownTextField(e) {
+                    var keyCode = e.keyCode;
+                    //l(keyCode);
+
+                    //easter += e.key;
+                    //if(easter == 'fly')
+                    //    init();
+
+                    if(keyCode == 37) left = true;
+                    if(keyCode == 39) right = true;
+                    if(keyCode == 38) up = true;
+                    if(keyCode == 40) down = true;
+                    if(keyCode == 32) space = true;
+                    if(keyCode == 27) esc = true;
+                }
+                document.addEventListener("keydown", keyDownTextField, false);
+
+                function keyUpTextField(e) {
+                    var keyCode = e.keyCode;
+                    if(keyCode == 37) left = false;
+                    if(keyCode == 39) right = false;
+                    if(keyCode == 38) up = false;
+                    if(keyCode == 40) down = false;
+                    if(keyCode == 32) space = false;
+                    if(keyCode == 27) esc = false;
+                }
+                document.addEventListener("keyup", keyUpTextField, false);
+            }
+
+            function random(min, max) {
+                return Math.floor(Math.random()*(max-min+1)+min);
+            }
+
+            function l(x) { console.log(x); }
+
+            (function() {
+                var lastTime = 0;
+                var vendors = ['ms', 'moz', 'webkit', 'o'];
+                for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+                    window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+                    window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame']
+                                            || window[vendors[x]+'CancelRequestAnimationFrame'];
+                }
+
+                if (!window.requestAnimationFrame)
+                    window.requestAnimationFrame = function(callback, element) {
+                        var currTime = new Date().getTime();
+                        var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+                        var id = window.setTimeout(function() { callback(currTime + timeToCall); },
+                        timeToCall);
+                        lastTime = currTime + timeToCall;
+                        return id;
+                    };
+
+                if (!window.cancelAnimationFrame)
+                    window.cancelAnimationFrame = function(id) {
+                        clearTimeout(id);
+                    };
+            }());
+        </script>
+    </head>
+    <body>
+    </body>
+</html>
